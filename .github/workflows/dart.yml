@@ -92,11 +92,12 @@ jobs:
 
     - name: Create release archive (Windows)
       if: matrix.platform == 'windows'
+      shell: powershell
       run: |
-        cd build/windows/x64/runner/Release
-        powershell Compress-Archive -Path * -DestinationPath ../../../../../${{ matrix.artifact_name }}.zip
-        cd ../../../../../
-        mv build/windows/x64/runner/Release/${{ matrix.artifact_name }}.zip .
+        $sourcePath = "build/windows/x64/runner/Release"
+        $zipPath = "${{ matrix.artifact_name }}.zip"
+        Compress-Archive -Path "$sourcePath/*" -DestinationPath $zipPath -Force
+        Write-Host "Created $zipPath"
 
     - name: Create release archive (macOS)
       if: matrix.platform == 'macos'
