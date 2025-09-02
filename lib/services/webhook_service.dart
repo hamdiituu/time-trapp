@@ -5,6 +5,15 @@ import '../models/webhook_config.dart';
 
 // Service for handling webhook requests
 class WebhookService {
+  static http.Client? _client;
+
+  // Set custom client for testing
+  static void setClient(http.Client client) {
+    _client = client;
+  }
+
+  // Get client instance
+  static http.Client get _httpClient => _client ?? http.Client();
   // Send webhook for session start
   static Future<void> sendSessionStartWebhook(
     TaskSession session,
@@ -104,21 +113,21 @@ class WebhookService {
 
         switch (config.method.toUpperCase()) {
           case 'POST':
-            response = await http.post(
+            response = await _httpClient.post(
               uri,
               headers: headers,
               body: jsonEncode(data),
             );
             break;
           case 'PUT':
-            response = await http.put(
+            response = await _httpClient.put(
               uri,
               headers: headers,
               body: jsonEncode(data),
             );
             break;
           case 'PATCH':
-            response = await http.patch(
+            response = await _httpClient.patch(
               uri,
               headers: headers,
               body: jsonEncode(data),
@@ -135,16 +144,16 @@ class WebhookService {
 
         switch (config.method.toUpperCase()) {
           case 'GET':
-            response = await http.get(uriWithParams);
+            response = await _httpClient.get(uriWithParams);
             break;
           case 'POST':
-            response = await http.post(uriWithParams);
+            response = await _httpClient.post(uriWithParams);
             break;
           case 'PUT':
-            response = await http.put(uriWithParams);
+            response = await _httpClient.put(uriWithParams);
             break;
           case 'PATCH':
-            response = await http.patch(uriWithParams);
+            response = await _httpClient.patch(uriWithParams);
             break;
           default:
             print('Unsupported HTTP method for query: ${config.method}');
@@ -164,6 +173,8 @@ class WebhookService {
 
   // Test webhook configuration
   static Future<bool> testWebhook(WebhookConfig config) async {
+    if (!config.isConfigured) return false;
+    
     try {
       final testData = {
         'event': 'test',
@@ -171,8 +182,19 @@ class WebhookService {
         'message': 'This is a test webhook from Time Trapp',
       };
 
-      await _sendWebhook(config, 'test', testData);
-      return true;
+      final uri = Uri.parse(config.url);
+      http.Response response;
+
+      if (config.sendDataInBody) {
+        final headers = {'Content-Type': 'application/json'};
+        response = await _httpClient.post(uri, headers: headers, body: jsonEncode(testData));
+      } else {
+        final queryParams = testData.map((key, value) => MapEntry(key, value.toString()));
+        final uriWithParams = uri.replace(queryParameters: queryParams);
+        response = await _httpClient.get(uriWithParams);
+      }
+
+      return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
       print('Webhook test failed: $e');
       return false;

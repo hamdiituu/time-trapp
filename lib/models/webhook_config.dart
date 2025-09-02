@@ -34,7 +34,7 @@ class WebhookConfig {
   // Create from JSON
   factory WebhookConfig.fromJson(Map<String, dynamic> json) {
     return WebhookConfig(
-      url: json['url'],
+      url: json['url'] ?? '',
       method: json['method'] ?? 'POST',
       sendDataInBody: json['sendDataInBody'] ?? true,
       onStart: json['onStart'] ?? false,

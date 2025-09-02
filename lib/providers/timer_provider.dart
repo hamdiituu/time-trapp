@@ -5,6 +5,57 @@ import '../models/task_session.dart';
 import '../services/storage_service.dart';
 import '../services/webhook_service.dart';
 import '../models/app_settings.dart';
+import '../models/webhook_config.dart';
+
+// Abstract interfaces for dependency injection
+abstract class IStorageService {
+  Future<void> saveCurrentSession(TaskSession? session);
+  Future<void> addSession(TaskSession session);
+  Future<void> updateSession(TaskSession session);
+  Future<void> saveSettings(AppSettings settings);
+  Future<List<TaskSession>> loadSessions();
+  Future<TaskSession?> loadCurrentSession();
+  Future<AppSettings> loadSettings();
+}
+
+abstract class IWebhookService {
+  Future<void> sendSessionStartWebhook(TaskSession session, WebhookConfig config, {String? userName});
+  Future<void> sendSessionStopWebhook(TaskSession session, WebhookConfig config, {String? userName});
+}
+
+// Concrete implementations
+class StorageServiceImpl implements IStorageService {
+  @override
+  Future<void> saveCurrentSession(TaskSession? session) => StorageService.saveCurrentSession(session);
+  
+  @override
+  Future<void> addSession(TaskSession session) => StorageService.addSession(session);
+  
+  @override
+  Future<void> updateSession(TaskSession session) => StorageService.updateSession(session);
+  
+  @override
+  Future<void> saveSettings(AppSettings settings) => StorageService.saveSettings(settings);
+  
+  @override
+  Future<List<TaskSession>> loadSessions() => StorageService.loadSessions();
+  
+  @override
+  Future<TaskSession?> loadCurrentSession() => StorageService.loadCurrentSession();
+  
+  @override
+  Future<AppSettings> loadSettings() => StorageService.loadSettings();
+}
+
+class WebhookServiceImpl implements IWebhookService {
+  @override
+  Future<void> sendSessionStartWebhook(TaskSession session, WebhookConfig config, {String? userName}) =>
+      WebhookService.sendSessionStartWebhook(session, config, userName: userName);
+  
+  @override
+  Future<void> sendSessionStopWebhook(TaskSession session, WebhookConfig config, {String? userName}) =>
+      WebhookService.sendSessionStopWebhook(session, config, userName: userName);
+}
 
 // Provider for managing timer state and sessions
 class TimerProvider with ChangeNotifier {
@@ -13,6 +64,16 @@ class TimerProvider with ChangeNotifier {
   TaskSession? _currentSession;
   bool _isRunning = false;
   AppSettings _settings = AppSettings();
+  
+  final IStorageService _storageService;
+  final IWebhookService _webhookService;
+
+  // Constructor with dependency injection
+  TimerProvider({
+    IStorageService? storageService,
+    IWebhookService? webhookService,
+  }) : _storageService = storageService ?? StorageServiceImpl(),
+       _webhookService = webhookService ?? WebhookServiceImpl();
 
   // Getters
   Duration get elapsedTime => _elapsedTime;
@@ -22,8 +83,8 @@ class TimerProvider with ChangeNotifier {
 
   // Initialize provider
   Future<void> initialize() async {
-    _settings = await StorageService.loadSettings();
-    _currentSession = await StorageService.loadCurrentSession();
+    _settings = await _storageService.loadSettings();
+    _currentSession = await _storageService.loadCurrentSession();
     
     if (_currentSession != null && _currentSession!.isActive) {
       _startTimer();
@@ -53,12 +114,12 @@ class TimerProvider with ChangeNotifier {
     _isRunning = true;
 
     // Save to storage
-    await StorageService.saveCurrentSession(session);
-    await StorageService.addSession(session);
+    await _storageService.saveCurrentSession(session);
+    await _storageService.addSession(session);
 
     // Send webhook if configured
     if (_settings.webhookConfig.onStart) {
-      await WebhookService.sendSessionStartWebhook(
+      await _webhookService.sendSessionStartWebhook(
         session, 
         _settings.webhookConfig,
         userName: _settings.userName,
@@ -87,12 +148,12 @@ class TimerProvider with ChangeNotifier {
     _currentSession = updatedSession;
 
     // Update in storage
-    await StorageService.updateSession(updatedSession);
-    await StorageService.saveCurrentSession(null);
+    await _storageService.updateSession(updatedSession);
+    await _storageService.saveCurrentSession(null);
 
     // Send webhook if configured
     if (_settings.webhookConfig.onStop) {
-      await WebhookService.sendSessionStopWebhook(
+      await _webhookService.sendSessionStopWebhook(
         updatedSession, 
         _settings.webhookConfig,
         userName: _settings.userName,
@@ -125,13 +186,13 @@ class TimerProvider with ChangeNotifier {
   // Update settings
   Future<void> updateSettings(AppSettings newSettings) async {
     _settings = newSettings;
-    await StorageService.saveSettings(_settings);
+    await _storageService.saveSettings(_settings);
     notifyListeners();
   }
 
   // Get sessions for a specific date range
   Future<List<TaskSession>> getSessionsForDateRange(DateTime start, DateTime end) async {
-    final allSessions = await StorageService.loadSessions();
+    final allSessions = await _storageService.loadSessions();
     return allSessions.where((session) {
       return session.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
              session.startTime.isBefore(end.add(const Duration(days: 1)));
