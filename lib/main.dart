@@ -6,6 +6,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/webhook_service.dart';
 import 'services/app_lifecycle_service.dart';
+import 'services/tray_service.dart';
 
 void main() {
   runApp(const TimeTrappApp());
@@ -54,6 +55,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   void dispose() {
     AppLifecycleService().dispose();
+    TrayService.dispose();
     super.dispose();
   }
 
@@ -66,6 +68,9 @@ class _AppInitializerState extends State<AppInitializer> {
     
     // Initialize app lifecycle service
     AppLifecycleService().initialize(context);
+    
+    // Initialize tray service
+    await TrayService.initialize(context);
     
     // Send app open webhook if configured
     if (timerProvider.settings.webhookConfig.onAppOpen) {

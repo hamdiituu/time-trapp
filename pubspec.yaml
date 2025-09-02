@@ -47,6 +47,9 @@ dependencies:
   # State management
   provider: ^6.1.1
   
+  # System tray for macOS
+  tray_manager: ^0.1.6
+  
 
 
 dev_dependencies:
