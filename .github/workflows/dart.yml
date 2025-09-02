@@ -1,0 +1,137 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: time_trapp_linux
+            file_extension: 
+          - os: windows-latest
+            platform: windows
+            artifact_name: time_trapp_windows
+            file_extension: .exe
+          - os: macos-latest
+            platform: macos
+            artifact_name: time_trapp_macos
+            file_extension: 
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Build for ${{ matrix.platform }}
+      run: |
+        if [ "${{ matrix.platform }}" = "linux" ]; then
+          flutter build linux --release
+        elif [ "${{ matrix.platform }}" = "windows" ]; then
+          flutter build windows --release
+        elif [ "${{ matrix.platform }}" = "macos" ]; then
+          flutter build macos --release
+        fi
+
+    - name: Create release archive (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        cd build/linux/x64/release/bundle
+        tar -czf ../../../../${{ matrix.artifact_name }}.tar.gz .
+        cd ../../../../
+        mv build/linux/x64/release/bundle/${{ matrix.artifact_name }}.tar.gz .
+
+    - name: Create release archive (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        cd build/windows/x64/runner/Release
+        powershell Compress-Archive -Path * -DestinationPath ../../../../../${{ matrix.artifact_name }}.zip
+        cd ../../../../../
+        mv build/windows/x64/runner/Release/${{ matrix.artifact_name }}.zip .
+
+    - name: Create release archive (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        cd build/macos/Build/Products/Release
+        zip -r ../../../../../${{ matrix.artifact_name }}.zip Time\ Trapp.app
+        cd ../../../../../
+        mv build/macos/Build/Products/Release/${{ matrix.artifact_name }}.zip .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.artifact_name }}.*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Time Trapp ${{ github.ref_name }}
+        body: |
+          # Time Trapp ${{ github.ref_name }}
+          
+          ## 🎉 Release Notes
+          
+          Modern, cross-platform time tracking application for desktop.
+          
+          ### ✨ Features
+          - One-click session start/stop
+          - Real-time tracking with live counter
+          - Detailed session management (purpose, goals, links)
+          - Daily & hourly analytics
+          - Advanced webhook integration with automatic username detection
+          - Cross-platform support (macOS, Windows, Linux)
+          - Modern Material Design UI
+          
+          ### 📱 Supported Platforms
+          - macOS (Intel & Apple Silicon)
+          - Windows (x64)
+          - Linux (x64)
+          
+          ### 🔧 Installation
+          1. Download the appropriate build for your platform
+          2. Extract and run the application
+          3. Follow the onboarding process
+          4. Start tracking your time!
+          
+          **Thank you for choosing Time Trapp!** 🎯
+        files: |
+          time_trapp_linux.tar.gz
+          time_trapp_windows.zip
+          time_trapp_macos.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
