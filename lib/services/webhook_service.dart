@@ -212,8 +212,15 @@ class WebhookService {
       final uri = Uri.parse(config.url);
       http.Response response;
 
-      // Create a client with timeout
+      // Create a client with timeout and special settings for localhost
       final client = http.Client();
+      
+      // Special handling for localhost URLs
+      final isLocalhost = uri.host == 'localhost' || 
+                         uri.host == '127.0.0.1' || 
+                         uri.host.startsWith('192.168.') ||
+                         uri.host.startsWith('10.') ||
+                         uri.host.startsWith('172.');
       
       try {
         if (config.sendDataInBody) {
@@ -293,15 +300,34 @@ class WebhookService {
       String errorMessage = 'Network error';
       String details = 'Unable to establish network connection';
       
+      // Special handling for localhost errors
+      final isLocalhost = config.url.contains('localhost') || 
+                         config.url.contains('127.0.0.1') ||
+                         config.url.contains('192.168.') ||
+                         config.url.contains('10.') ||
+                         config.url.contains('172.');
+      
       if (e.message.contains('Connection refused')) {
         errorMessage = 'Connection refused';
-        details = 'The server at ${config.url} is not running or not accepting connections';
+        if (isLocalhost) {
+          details = 'The local server at ${config.url} is not running. Please start your local server first.';
+        } else {
+          details = 'The server at ${config.url} is not running or not accepting connections';
+        }
       } else if (e.message.contains('Operation not permitted')) {
         errorMessage = 'Connection not permitted';
-        details = 'Network access to ${config.url} is blocked or the server is not accessible';
+        if (isLocalhost) {
+          details = 'Cannot connect to localhost. Try using 127.0.0.1 instead of localhost, or check if your local server is running.';
+        } else {
+          details = 'Network access to ${config.url} is blocked or the server is not accessible';
+        }
       } else if (e.message.contains('No route to host')) {
         errorMessage = 'No route to host';
-        details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+        if (isLocalhost) {
+          details = 'Cannot reach localhost. Make sure your local server is running and accessible.';
+        } else {
+          details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+        }
       }
       
       return {
@@ -314,18 +340,41 @@ class WebhookService {
       String errorMessage = 'Connection failed';
       String details = 'Unable to connect to the webhook URL';
       
+      // Special handling for localhost errors
+      final isLocalhost = config.url.contains('localhost') || 
+                         config.url.contains('127.0.0.1') ||
+                         config.url.contains('192.168.') ||
+                         config.url.contains('10.') ||
+                         config.url.contains('172.');
+      
       if (e.message.contains('Connection refused')) {
         errorMessage = 'Connection refused';
-        details = 'The server at ${config.url} is not running or not accepting connections';
+        if (isLocalhost) {
+          details = 'The local server at ${config.url} is not running. Please start your local server first.';
+        } else {
+          details = 'The server at ${config.url} is not running or not accepting connections';
+        }
       } else if (e.message.contains('Operation not permitted')) {
         errorMessage = 'Connection not permitted';
-        details = 'Network access to ${config.url} is blocked or the server is not accessible';
+        if (isLocalhost) {
+          details = 'Cannot connect to localhost. Try using 127.0.0.1 instead of localhost, or check if your local server is running.';
+        } else {
+          details = 'Network access to ${config.url} is blocked or the server is not accessible';
+        }
       } else if (e.message.contains('No route to host')) {
         errorMessage = 'No route to host';
-        details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+        if (isLocalhost) {
+          details = 'Cannot reach localhost. Make sure your local server is running and accessible.';
+        } else {
+          details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+        }
       } else if (e.message.contains('Connection timed out')) {
         errorMessage = 'Connection timeout';
-        details = 'The server at ${config.url} did not respond in time';
+        if (isLocalhost) {
+          details = 'The local server at ${config.url} did not respond in time. Make sure it is running and accessible.';
+        } else {
+          details = 'The server at ${config.url} did not respond in time';
+        }
       }
       
       return {

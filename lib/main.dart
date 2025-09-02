@@ -72,8 +72,9 @@ class _AppInitializerState extends State<AppInitializer> {
     // Initialize tray service
     await TrayService.initialize(context);
     
-    // Send app open webhook if configured
-    if (timerProvider.settings.webhookConfig.onAppOpen) {
+    // Send app open webhook if configured (only on first launch)
+    if (timerProvider.settings.webhookConfig.onAppOpen && 
+        timerProvider.settings.isFirstLaunch) {
       await WebhookService.sendAppOpenWebhook(
         timerProvider.settings.webhookConfig,
         userName: timerProvider.settings.userName,

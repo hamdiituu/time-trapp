@@ -10,6 +10,7 @@ class AppLifecycleService extends WidgetsBindingObserver {
   AppLifecycleService._internal();
 
   BuildContext? _context;
+  bool _hasSentAppOpenWebhook = false;
 
   void initialize(BuildContext context) {
     _context = context;
@@ -39,14 +40,19 @@ class AppLifecycleService extends WidgetsBindingObserver {
             userName: timerProvider.settings.userName,
           );
         }
+        // Reset the flag when app is closed
+        _hasSentAppOpenWebhook = false;
         break;
       case AppLifecycleState.resumed:
-        // Send app open webhook when app is resumed
-        if (webhookConfig.onAppOpen && webhookConfig.isConfigured) {
+        // Send app open webhook when app is resumed (only once per session)
+        if (webhookConfig.onAppOpen && 
+            webhookConfig.isConfigured && 
+            !_hasSentAppOpenWebhook) {
           WebhookService.sendAppOpenWebhook(
             webhookConfig,
             userName: timerProvider.settings.userName,
           );
+          _hasSentAppOpenWebhook = true;
         }
         break;
       case AppLifecycleState.inactive:

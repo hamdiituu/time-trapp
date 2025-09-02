@@ -123,6 +123,31 @@ python -m SimpleHTTPServer 3000
 
 Then use `http://localhost:3000` as your webhook URL in the app.
 
+**Troubleshooting Localhost Issues:**
+If you can access `http://localhost:3000` in your browser but not from the app, try these solutions:
+
+1. **Use 127.0.0.1 instead of localhost:**
+   ```
+   http://127.0.0.1:3000
+   ```
+
+2. **Check your local server is running:**
+   ```bash
+   # Test with curl
+   curl http://localhost:3000
+   ```
+
+3. **For macOS users:** Make sure the app has network permissions in System Preferences > Security & Privacy > Privacy > Network.
+
+4. **For Android users:** The app now includes `usesCleartextTraffic="true"` to allow HTTP connections.
+
+**Webhook Behavior:**
+- **app_open**: Sent only once when the app is first launched or when resuming from a closed state
+- **app_close**: Sent when the app is paused or closed
+- **session_start**: Sent when a work session begins
+- **session_stop**: Sent when a work session ends
+- **test**: Sent only when you click the "Test Webhook" button
+
 ### 🔧 Technical Details
 
 #### Architecture
@@ -317,6 +342,31 @@ python -m SimpleHTTPServer 3000
 ```
 
 Sonra uygulamada webhook URL olarak `http://localhost:3000` kullanın.
+
+**Localhost Sorunları İçin Çözümler:**
+Tarayıcıdan `http://localhost:3000` adresine erişebiliyorsanız ama uygulamadan erişemiyorsanız, bu çözümleri deneyin:
+
+1. **localhost yerine 127.0.0.1 kullanın:**
+   ```
+   http://127.0.0.1:3000
+   ```
+
+2. **Yerel sunucunuzun çalıştığından emin olun:**
+   ```bash
+   # curl ile test edin
+   curl http://localhost:3000
+   ```
+
+3. **macOS kullanıcıları için:** Sistem Tercihleri > Güvenlik ve Gizlilik > Gizlilik > Ağ bölümünden uygulamanın ağ izinlerine sahip olduğundan emin olun.
+
+4. **Android kullanıcıları için:** Uygulama artık HTTP bağlantılarına izin vermek için `usesCleartextTraffic="true"` ayarını içeriyor.
+
+**Webhook Davranışları:**
+- **app_open**: Sadece uygulama ilk açıldığında veya kapalı durumdan geri döndüğünde bir kez gönderilir
+- **app_close**: Uygulama duraklatıldığında veya kapandığında gönderilir
+- **session_start**: Çalışma seansı başladığında gönderilir
+- **session_stop**: Çalışma seansı bittiğinde gönderilir
+- **test**: Sadece "Webhook Test Et" butonuna bastığınızda gönderilir
 
 ### 🔧 Teknik Detaylar
 
