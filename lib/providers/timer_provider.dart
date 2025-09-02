@@ -58,7 +58,11 @@ class TimerProvider with ChangeNotifier {
 
     // Send webhook if configured
     if (_settings.webhookConfig.onStart) {
-      await WebhookService.sendSessionStartWebhook(session, _settings.webhookConfig);
+      await WebhookService.sendSessionStartWebhook(
+        session, 
+        _settings.webhookConfig,
+        userName: _settings.userName,
+      );
     }
 
     _startTimer();
@@ -88,7 +92,11 @@ class TimerProvider with ChangeNotifier {
 
     // Send webhook if configured
     if (_settings.webhookConfig.onStop) {
-      await WebhookService.sendSessionStopWebhook(updatedSession, _settings.webhookConfig);
+      await WebhookService.sendSessionStopWebhook(
+        updatedSession, 
+        _settings.webhookConfig,
+        userName: _settings.userName,
+      );
     }
 
     notifyListeners();

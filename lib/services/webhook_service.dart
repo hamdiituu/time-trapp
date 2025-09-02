@@ -8,8 +8,9 @@ class WebhookService {
   // Send webhook for session start
   static Future<void> sendSessionStartWebhook(
     TaskSession session,
-    WebhookConfig config,
-  ) async {
+    WebhookConfig config, {
+    String? userName,
+  }) async {
     if (!config.onStart || !config.isConfigured) return;
 
     await _sendWebhook(
@@ -23,6 +24,7 @@ class WebhookService {
         'link': session.link,
         'startTime': session.startTime.toIso8601String(),
         'timestamp': DateTime.now().toIso8601String(),
+        if (userName != null) 'userName': userName,
       },
     );
   }
@@ -30,8 +32,9 @@ class WebhookService {
   // Send webhook for session stop
   static Future<void> sendSessionStopWebhook(
     TaskSession session,
-    WebhookConfig config,
-  ) async {
+    WebhookConfig config, {
+    String? userName,
+  }) async {
     if (!config.onStop || !config.isConfigured) return;
 
     await _sendWebhook(
@@ -48,12 +51,13 @@ class WebhookService {
         'duration': session.duration?.inMilliseconds,
         'formattedDuration': session.formattedDuration,
         'timestamp': DateTime.now().toIso8601String(),
+        if (userName != null) 'userName': userName,
       },
     );
   }
 
   // Send webhook for app open
-  static Future<void> sendAppOpenWebhook(WebhookConfig config) async {
+  static Future<void> sendAppOpenWebhook(WebhookConfig config, {String? userName}) async {
     if (!config.onAppOpen || !config.isConfigured) return;
 
     await _sendWebhook(
@@ -62,12 +66,13 @@ class WebhookService {
       {
         'event': 'app_open',
         'timestamp': DateTime.now().toIso8601String(),
+        if (userName != null) 'userName': userName,
       },
     );
   }
 
   // Send webhook for app close
-  static Future<void> sendAppCloseWebhook(WebhookConfig config) async {
+  static Future<void> sendAppCloseWebhook(WebhookConfig config, {String? userName}) async {
     if (!config.onAppClose || !config.isConfigured) return;
 
     await _sendWebhook(
@@ -76,6 +81,7 @@ class WebhookService {
       {
         'event': 'app_close',
         'timestamp': DateTime.now().toIso8601String(),
+        if (userName != null) 'userName': userName,
       },
     );
   }

@@ -74,7 +74,10 @@ class _AppInitializerState extends State<AppInitializer> {
     
     // Send app open webhook if configured
     if (timerProvider.settings.webhookConfig.onAppOpen) {
-      await WebhookService.sendAppOpenWebhook(timerProvider.settings.webhookConfig);
+      await WebhookService.sendAppOpenWebhook(
+        timerProvider.settings.webhookConfig,
+        userName: timerProvider.settings.userName,
+      );
     }
     
     setState(() {
