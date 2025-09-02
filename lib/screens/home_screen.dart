@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/timer_provider.dart';
@@ -58,6 +59,49 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Ayarlar',
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: Colors.grey[800], size: 20),
+              onSelected: (value) => _handleMenuAction(value),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'status',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue),
+                      SizedBox(width: 12),
+                      Text('Timer Durumu'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'start_stop',
+                  child: Row(
+                    children: [
+                      Icon(Icons.play_arrow, color: Colors.green),
+                      SizedBox(width: 12),
+                      Text('Seans Başlat/Durdur'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'quit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.exit_to_app, color: Colors.red),
+                      SizedBox(width: 12),
+                      Text('Çıkış'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -359,6 +403,86 @@ class _HomeScreenState extends State<HomeScreen> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Durdur'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleMenuAction(String value) {
+    final timerProvider = Provider.of<TimerProvider>(context, listen: false);
+    
+    switch (value) {
+      case 'status':
+        _showStatus();
+        break;
+      case 'start_stop':
+        if (timerProvider.isRunning) {
+          _showStopConfirmation(timerProvider);
+        } else {
+          _showStartSessionModal();
+        }
+        break;
+      case 'quit':
+        _quitApp();
+        break;
+    }
+  }
+
+  void _showStatus() {
+    final timerProvider = Provider.of<TimerProvider>(context, listen: false);
+    final currentSession = timerProvider.currentSession;
+    final isRunning = timerProvider.isRunning;
+    final elapsedTime = timerProvider.formattedElapsedTime;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Timer Durumu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Durum: ${isRunning ? "Çalışıyor" : "Durduruldu"}'),
+            Text('Süre: $elapsedTime'),
+            if (currentSession != null) ...[
+              const SizedBox(height: 8),
+              Text('Amaç: ${currentSession.purpose}'),
+              Text('Hedef: ${currentSession.goal}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _quitApp() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Çıkış'),
+        content: const Text('Uygulamadan çıkmak istediğinizden emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              exit(0);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Çık'),
           ),
         ],
       ),
