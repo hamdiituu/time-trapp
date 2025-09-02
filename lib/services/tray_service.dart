@@ -1,18 +1,23 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import '../providers/timer_provider.dart';
+import '../screens/session_start_screen.dart';
 
 class TrayService with TrayListener {
   static bool _isInitialized = false;
+  static Timer? _updateTimer;
+  static BuildContext? _globalContext;
 
   static Future<void> initialize(BuildContext context) async {
     if (_isInitialized) return;
 
     try {
+      _globalContext = context;
       final trayService = TrayService();
-      await TrayManager.instance.setIcon('assets/icon.png');
+      await TrayManager.instance.setIcon('assets/icon_2.png');
       await TrayManager.instance.setToolTip('Time Trapp - Timer');
 
       // Set up the tray menu
@@ -20,6 +25,9 @@ class TrayService with TrayListener {
 
       // Register the tray listener
       TrayManager.instance.addListener(trayService);
+
+      // Start update timer (every 5 seconds)
+      _startUpdateTimer();
 
       _isInitialized = true;
       print('Tray initialized successfully');
@@ -73,6 +81,15 @@ class TrayService with TrayListener {
     await _createTrayMenu(context);
   }
 
+  static void _startUpdateTimer() {
+    _updateTimer?.cancel();
+    _updateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_globalContext != null) {
+        updateMenu(_globalContext!);
+      }
+    });
+  }
+
   @override
   void onTrayIconMouseDown() {
     TrayManager.instance.popUpContextMenu();
@@ -99,13 +116,62 @@ class TrayService with TrayListener {
   }
 
   void _showStatusDialog() {
-    // This would need to be implemented with a global context
-    print('Show status dialog');
+    if (_globalContext == null) return;
+    
+    final timerProvider = Provider.of<TimerProvider>(_globalContext!, listen: false);
+    final currentSession = timerProvider.currentSession;
+    final isRunning = timerProvider.isRunning;
+    final elapsedTime = timerProvider.formattedElapsedTime;
+
+    showDialog(
+      context: _globalContext!,
+      builder: (context) => AlertDialog(
+        title: const Text('Timer Durumu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Durum: ${isRunning ? "Çalışıyor" : "Durduruldu"}'),
+            Text('Süre: $elapsedTime'),
+            if (currentSession != null) ...[
+              const SizedBox(height: 8),
+              Text('Amaç: ${currentSession.purpose}'),
+              Text('Hedef: ${currentSession.goal}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleSession() {
-    // This would need to be implemented with a global context
-    print('Toggle session');
+    if (_globalContext == null) return;
+    
+    final timerProvider = Provider.of<TimerProvider>(_globalContext!, listen: false);
+    
+    if (timerProvider.isRunning) {
+      // Stop session
+      timerProvider.stopSession();
+    } else {
+      // Start session - show full screen
+      _showStartSessionScreen();
+    }
+  }
+
+  void _showStartSessionScreen() {
+    if (_globalContext == null) return;
+    
+    Navigator.of(_globalContext!).push(
+      MaterialPageRoute(
+        builder: (context) => StartSessionScreen(),
+      ),
+    );
   }
 
   void _quitApp() {
@@ -113,6 +179,8 @@ class TrayService with TrayListener {
   }
 
   static void dispose() {
+    _updateTimer?.cancel();
     _isInitialized = false;
+    _globalContext = null;
   }
 }

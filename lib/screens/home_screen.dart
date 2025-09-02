@@ -5,6 +5,7 @@ import '../providers/timer_provider.dart';
 import '../widgets/start_session_modal.dart';
 import '../widgets/session_history_list.dart';
 import 'reports_screen.dart';
+import 'session_start_screen.dart';
 import 'settings_screen.dart';
 
 // Main home screen with timer and session management
@@ -116,7 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (timerProvider.settings.userName.isNotEmpty)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -138,24 +140,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Timer section
                 _buildTimerSection(timerProvider),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Action buttons
                 _buildActionButtons(timerProvider),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Today's summary
                 _buildTodaysSummary(timerProvider),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Recent sessions
                 _buildRecentSessions(timerProvider),
               ],
@@ -193,9 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
               letterSpacing: 2,
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Current session info
           if (timerProvider.currentSession != null)
             Column(
@@ -263,8 +265,12 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  timerProvider.isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                  color: timerProvider.isRunning ? Colors.red[600] : Colors.blue[600],
+                  timerProvider.isRunning
+                      ? Icons.stop_rounded
+                      : Icons.play_arrow_rounded,
+                  color: timerProvider.isRunning
+                      ? Colors.red[600]
+                      : Colors.blue[600],
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -273,7 +279,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: timerProvider.isRunning ? Colors.red[600] : Colors.blue[600],
+                    color: timerProvider.isRunning
+                        ? Colors.red[600]
+                        : Colors.blue[600],
                   ),
                 ),
               ],
@@ -291,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final totalTime = snapshot.data ?? Duration.zero;
         final hours = totalTime.inHours;
         final minutes = totalTime.inMinutes.remainder(60);
-        
+
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -373,12 +381,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Show the start session screen as a full screen page instead of a modal bottom sheet
   void _showStartSessionModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const StartSessionModal(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StartSessionScreen(),
+      ),
     );
   }
 
@@ -387,7 +395,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Seansı Durdur'),
-        content: const Text('Çalışma seansınızı durdurmak istediğinizden emin misiniz?'),
+        content: const Text(
+            'Çalışma seansınızı durdurmak istediğinizden emin misiniz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -411,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleMenuAction(String value) {
     final timerProvider = Provider.of<TimerProvider>(context, listen: false);
-    
+
     switch (value) {
       case 'status':
         _showStatus();
