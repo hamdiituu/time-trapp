@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/task_session.dart';
 import '../models/webhook_config.dart';
@@ -172,32 +173,174 @@ class WebhookService {
   }
 
   // Test webhook configuration
-  static Future<bool> testWebhook(WebhookConfig config) async {
-    if (!config.isConfigured) return false;
+  static Future<Map<String, dynamic>> testWebhook(WebhookConfig config) async {
+    if (!config.isConfigured) {
+      return {
+        'success': false,
+        'error': 'Webhook URL is not configured',
+        'details': 'Please enter a valid webhook URL'
+      };
+    }
+
+    // Validate URL format
+    try {
+      final uri = Uri.parse(config.url);
+      if (!uri.hasScheme || (!uri.scheme.startsWith('http'))) {
+        return {
+          'success': false,
+          'error': 'Invalid URL format',
+          'details': 'URL must start with http:// or https://'
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Invalid URL format',
+        'details': 'Please check the URL format'
+      };
+    }
     
     try {
       final testData = {
         'event': 'test',
         'timestamp': DateTime.now().toIso8601String(),
         'message': 'This is a test webhook from Time Trapp',
+        'app': 'Time Trapp',
+        'version': '1.0.0',
       };
 
       final uri = Uri.parse(config.url);
       http.Response response;
 
-      if (config.sendDataInBody) {
-        final headers = {'Content-Type': 'application/json'};
-        response = await _httpClient.post(uri, headers: headers, body: jsonEncode(testData));
-      } else {
-        final queryParams = testData.map((key, value) => MapEntry(key, value.toString()));
-        final uriWithParams = uri.replace(queryParameters: queryParams);
-        response = await _httpClient.get(uriWithParams);
-      }
+      // Create a client with timeout
+      final client = http.Client();
+      
+      try {
+        if (config.sendDataInBody) {
+          final headers = {'Content-Type': 'application/json'};
+          
+          switch (config.method.toUpperCase()) {
+            case 'POST':
+              response = await client.post(
+                uri, 
+                headers: headers, 
+                body: jsonEncode(testData)
+              ).timeout(const Duration(seconds: 10));
+              break;
+            case 'PUT':
+              response = await client.put(
+                uri, 
+                headers: headers, 
+                body: jsonEncode(testData)
+              ).timeout(const Duration(seconds: 10));
+              break;
+            case 'PATCH':
+              response = await client.patch(
+                uri, 
+                headers: headers, 
+                body: jsonEncode(testData)
+              ).timeout(const Duration(seconds: 10));
+              break;
+            default:
+              return {
+                'success': false,
+                'error': 'Unsupported HTTP method',
+                'details': 'Method ${config.method} is not supported for body requests'
+              };
+          }
+        } else {
+          final queryParams = testData.map((key, value) => MapEntry(key, value.toString()));
+          final uriWithParams = uri.replace(queryParameters: queryParams);
+          
+          switch (config.method.toUpperCase()) {
+            case 'GET':
+              response = await client.get(uriWithParams).timeout(const Duration(seconds: 10));
+              break;
+            case 'POST':
+              response = await client.post(uriWithParams).timeout(const Duration(seconds: 10));
+              break;
+            case 'PUT':
+              response = await client.put(uriWithParams).timeout(const Duration(seconds: 10));
+              break;
+            case 'PATCH':
+              response = await client.patch(uriWithParams).timeout(const Duration(seconds: 10));
+              break;
+            default:
+              return {
+                'success': false,
+                'error': 'Unsupported HTTP method',
+                'details': 'Method ${config.method} is not supported'
+              };
+          }
+        }
 
-      return response.statusCode >= 200 && response.statusCode < 300;
+        final success = response.statusCode >= 200 && response.statusCode < 300;
+        
+        return {
+          'success': success,
+          'statusCode': response.statusCode,
+          'responseBody': response.body.length > 200 
+              ? '${response.body.substring(0, 200)}...' 
+              : response.body,
+          'message': success 
+              ? 'Webhook test successful!' 
+              : 'Webhook test failed with status ${response.statusCode}'
+        };
+      } finally {
+        client.close();
+      }
+    } on SocketException catch (e) {
+      String errorMessage = 'Network error';
+      String details = 'Unable to establish network connection';
+      
+      if (e.message.contains('Connection refused')) {
+        errorMessage = 'Connection refused';
+        details = 'The server at ${config.url} is not running or not accepting connections';
+      } else if (e.message.contains('Operation not permitted')) {
+        errorMessage = 'Connection not permitted';
+        details = 'Network access to ${config.url} is blocked or the server is not accessible';
+      } else if (e.message.contains('No route to host')) {
+        errorMessage = 'No route to host';
+        details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+      }
+      
+      return {
+        'success': false,
+        'error': errorMessage,
+        'details': details,
+        'originalError': e.toString()
+      };
+    } on http.ClientException catch (e) {
+      String errorMessage = 'Connection failed';
+      String details = 'Unable to connect to the webhook URL';
+      
+      if (e.message.contains('Connection refused')) {
+        errorMessage = 'Connection refused';
+        details = 'The server at ${config.url} is not running or not accepting connections';
+      } else if (e.message.contains('Operation not permitted')) {
+        errorMessage = 'Connection not permitted';
+        details = 'Network access to ${config.url} is blocked or the server is not accessible';
+      } else if (e.message.contains('No route to host')) {
+        errorMessage = 'No route to host';
+        details = 'Cannot reach the server at ${config.url}. Check if the URL is correct';
+      } else if (e.message.contains('Connection timed out')) {
+        errorMessage = 'Connection timeout';
+        details = 'The server at ${config.url} did not respond in time';
+      }
+      
+      return {
+        'success': false,
+        'error': errorMessage,
+        'details': details,
+        'originalError': e.toString()
+      };
     } catch (e) {
-      print('Webhook test failed: $e');
-      return false;
+      return {
+        'success': false,
+        'error': 'Unexpected error',
+        'details': 'An unexpected error occurred: ${e.toString()}',
+        'originalError': e.toString()
+      };
     }
   }
 }

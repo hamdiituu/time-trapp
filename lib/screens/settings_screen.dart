@@ -119,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _testWebhook() async {
+    Future<void> _testWebhook() async {
     if (_webhookUrlController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -145,15 +145,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onAppClose: false,
       );
       
-      final success = await WebhookService.testWebhook(webhookConfig);
+      final result = await WebhookService.testWebhook(webhookConfig);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success ? 'Webhook testi başarılı!' : 'Webhook testi başarısız'),
-            backgroundColor: success ? Colors.green : Colors.red,
-          ),
-        );
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Webhook testi başarılı!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          // Show detailed error dialog
+          _showWebhookErrorDialog(result);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -171,6 +177,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     }
+  }
+
+  void _showWebhookErrorDialog(Map<String, dynamic> result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            const SizedBox(width: 8),
+            const Text('Webhook Test Hatası'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              result['error'] ?? 'Bilinmeyen hata',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              result['details'] ?? 'Detay bilgisi mevcut değil',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+            if (result['originalError'] != null) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Teknik Detay:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  result['originalError'],
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

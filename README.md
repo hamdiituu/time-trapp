@@ -100,6 +100,29 @@
 5. Select which events should trigger webhooks
 6. Test your configuration with "Test Webhook"
 
+#### Testing Webhooks Locally
+To test webhooks locally, you can use a simple HTTP server:
+
+**Using Node.js:**
+```bash
+# Install http-server globally
+npm install -g http-server
+
+# Start a simple server
+http-server -p 3000 --cors
+```
+
+**Using Python:**
+```bash
+# Python 3
+python -m http.server 3000
+
+# Python 2
+python -m SimpleHTTPServer 3000
+```
+
+Then use `http://localhost:3000` as your webhook URL in the app.
+
 ### 🔧 Technical Details
 
 #### Architecture
@@ -271,6 +294,29 @@ lib/
 4. Veri gönderme yöntemini belirleyin (Body veya Query)
 5. Hangi olaylarda webhook gönderileceğini seçin
 6. "Webhook Test Et" ile yapılandırmanızı test edin
+
+#### Webhook'ları Yerel Olarak Test Etme
+Webhook'ları yerel olarak test etmek için basit bir HTTP sunucusu kullanabilirsiniz:
+
+**Node.js kullanarak:**
+```bash
+# http-server'ı global olarak yükleyin
+npm install -g http-server
+
+# Basit bir sunucu başlatın
+http-server -p 3000 --cors
+```
+
+**Python kullanarak:**
+```bash
+# Python 3
+python -m http.server 3000
+
+# Python 2
+python -m SimpleHTTPServer 3000
+```
+
+Sonra uygulamada webhook URL olarak `http://localhost:3000` kullanın.
 
 ### 🔧 Teknik Detaylar
 
