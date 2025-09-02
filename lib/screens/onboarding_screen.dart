@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/timer_provider.dart';
 import '../models/app_settings.dart';
+import '../services/username_service.dart';
 import 'home_screen.dart';
 
 // Onboarding screen for first-time users
@@ -18,10 +19,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSystemUsername();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSystemUsername() async {
+    try {
+      final systemUsername = await UsernameService.getSystemUsername();
+      if (mounted) {
+        _nameController.text = systemUsername;
+      }
+    } catch (e) {
+      print('Error loading system username in onboarding: $e');
+      // Keep the field empty if we can't get the system username
+    }
   }
 
   void _nextPage() {
@@ -319,6 +338,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _completeOnboarding(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _loadSystemUsername,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.computer,
+                        color: Colors.white.withOpacity(0.8),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sistem Kullanıcı Adını Kullan',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],

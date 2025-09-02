@@ -4,6 +4,7 @@ import '../providers/timer_provider.dart';
 import '../models/app_settings.dart';
 import '../models/webhook_config.dart';
 import '../services/webhook_service.dart';
+import '../services/username_service.dart';
 
 // Settings screen for user preferences and webhook configuration
 class SettingsScreen extends StatefulWidget {
@@ -49,11 +50,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  void _loadSettings() {
+  void _loadSettings() async {
     final timerProvider = Provider.of<TimerProvider>(context, listen: false);
     final settings = timerProvider.settings;
     
-    _userNameController.text = settings.userName;
+    // Load system username if userName is empty
+    String userName = settings.userName;
+    if (userName.isEmpty) {
+      try {
+        userName = await UsernameService.getSystemUsername();
+      } catch (e) {
+        print('Error loading system username: $e');
+        userName = 'User';
+      }
+    }
+    
+    _userNameController.text = userName;
     _webhookUrlController.text = settings.webhookConfig.url;
     _webhookMethodController.text = settings.webhookConfig.method;
     
@@ -65,6 +77,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _onAppOpen = settings.webhookConfig.onAppOpen;
       _onAppClose = settings.webhookConfig.onAppClose;
     });
+  }
+
+  Future<void> _loadSystemUsername() async {
+    try {
+      final systemUsername = await UsernameService.getSystemUsername();
+      setState(() {
+        _userNameController.text = systemUsername;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sistem kullanıcı adı yüklendi: $systemUsername'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sistem kullanıcı adı alınamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -316,6 +355,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'Adınızı girin',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _loadSystemUsername,
+                icon: const Icon(Icons.computer),
+                label: const Text('Sistem Kullanıcı Adını Kullan'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  side: BorderSide(color: Colors.blue),
+                ),
               ),
             ),
           ],
