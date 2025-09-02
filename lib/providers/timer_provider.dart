@@ -219,8 +219,9 @@ class TimerProvider with ChangeNotifier {
   Future<List<TaskSession>> getSessionsForDateRange(DateTime start, DateTime end) async {
     final allSessions = await _storageService.loadSessions();
     return allSessions.where((session) {
-      return session.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
-             session.startTime.isBefore(end.add(const Duration(days: 1)));
+      // Check if session start time is within the date range (inclusive)
+      return session.startTime.isAtSameMomentAs(start) || 
+             session.startTime.isAfter(start) && session.startTime.isBefore(end);
     }).toList();
   }
 

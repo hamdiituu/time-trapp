@@ -441,7 +441,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    return timerProvider.getSessionsForDateRange(startOfDay, endOfDay);
+    // Debug: Print date range being searched
+    print('Searching sessions for date: ${date.toIso8601String()}');
+    print('Date range: ${startOfDay.toIso8601String()} to ${endOfDay.toIso8601String()}');
+    
+    final sessions = await timerProvider.getSessionsForDateRange(startOfDay, endOfDay);
+    
+    // Debug: Print found sessions
+    print('Found ${sessions.length} sessions for this date');
+    for (final session in sessions) {
+      print('Session: ${session.purpose} - Start: ${session.startTime.toIso8601String()}');
+    }
+    
+    return sessions;
   }
 
   Future<Map<int, Duration>> _getHourlyData(DateTime date) async {
