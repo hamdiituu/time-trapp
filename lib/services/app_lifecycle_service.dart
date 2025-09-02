@@ -34,13 +34,19 @@ class AppLifecycleService extends WidgetsBindingObserver {
       case AppLifecycleState.detached:
         // Send app close webhook when app is paused or detached
         if (webhookConfig.onAppClose && webhookConfig.isConfigured) {
-          WebhookService.sendAppCloseWebhook(webhookConfig);
+          WebhookService.sendAppCloseWebhook(
+            webhookConfig,
+            userName: timerProvider.settings.userName,
+          );
         }
         break;
       case AppLifecycleState.resumed:
         // Send app open webhook when app is resumed
         if (webhookConfig.onAppOpen && webhookConfig.isConfigured) {
-          WebhookService.sendAppOpenWebhook(webhookConfig);
+          WebhookService.sendAppOpenWebhook(
+            webhookConfig,
+            userName: timerProvider.settings.userName,
+          );
         }
         break;
       case AppLifecycleState.inactive:
