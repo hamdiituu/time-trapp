@@ -55,21 +55,19 @@ jobs:
           liblzma-dev \
           libstdc++-12-dev \
           libayatana-appindicator3-dev \
-          libappindicator3-dev \
           libx11-dev \
           libxrandr-dev \
           libxi-dev \
           libxcursor-dev \
           libxinerama-dev \
-          libxss1 \
           libgl1-mesa-dev \
           libasound2-dev
 
     - name: Install dependencies
       run: flutter pub get
 
-#    - name: Run tests
-#      run: flutter test
+    - name: Run tests
+      run: flutter test
 
     - name: Flutter doctor
       run: flutter doctor -v
