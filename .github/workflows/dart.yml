@@ -1,5 +1,9 @@
 name: Build and Release
 
+# Release oluşturabilmek için gerekli izin
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -12,6 +16,14 @@ on:
         default: 'v1.0.0'
       create_release:
         description: 'Release oluşturulsun mu?'
+        type: boolean
+        default: true
+      run_tests:
+        description: 'Testler çalıştırılsın mı?'
+        type: boolean
+        default: true
+      require_tests_pass:
+        description: 'Testler geçmek zorunda mı? (false ise başarısız testler release’i engellemez)'
         type: boolean
         default: true
 
@@ -68,8 +80,14 @@ jobs:
     - name: Flutter pub get
       run: flutter pub get
 
-#    - name: Run tests
-#      run: flutter test
+    # Test adımı: 
+    # - Tag push'ta her zaman çalışır ve geçmek zorundadır.
+    # - workflow_dispatch'ta inputs.run_tests == true ise çalışır.
+    # - workflow_dispatch'ta inputs.require_tests_pass == false ise hata job'u düşürmez.
+    - name: Run tests
+      if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_tests == true }}
+      run: flutter test
+      continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.require_tests_pass == false }}
 
     - name: Clean build
       run: flutter clean
@@ -123,22 +141,37 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
+    # Tag push ise direkt çalış, workflow_dispatch ise create_release true ise çalış
+    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && (inputs.create_release == true || inputs.create_release == 'true')) }}
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Debug release condition
+      run: |
+        echo "event_name=${{ github.event_name }}"
+        echo "ref=${{ github.ref }}"
+        echo "ref_name=${{ github.ref_name }}"
+        echo "inputs.create_release=${{ toJSON(inputs.create_release) }}"
+        echo "inputs.release_version=${{ inputs.release_version }}"
+        echo "inputs.run_tests=${{ toJSON(inputs.run_tests) }}"
+        echo "inputs.require_tests_pass=${{ toJSON(inputs.require_tests_pass) }}"
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         pattern: time_trapp_*
-        merge-multiple: true  # indirilen tüm artifact'ları çalışma dizinine birleştirir
+        merge-multiple: true  # tüm artifact'ları çalışma dizinine düz indir
+
+    - name: List downloaded files
+      run: ls -la
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ inputs.release_version || github.ref_name }}
+        target_commitish: ${{ github.sha }}
         name: Time Trapp ${{ inputs.release_version || github.ref_name }}
         body: |
           # Time Trapp ${{ inputs.release_version || github.ref_name }}
