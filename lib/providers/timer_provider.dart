@@ -196,6 +196,25 @@ class TimerProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Clear all data
+  Future<void> clearAllData() async {
+    // Stop current session if running
+    if (_isRunning) {
+      _timer?.cancel();
+      _isRunning = false;
+    }
+    
+    // Clear all data from storage
+    await StorageService.clearAllData();
+    
+    // Reset state
+    _currentSession = null;
+    _elapsedTime = Duration.zero;
+    _settings = AppSettings();
+    
+    notifyListeners();
+  }
+
   // Get sessions for a specific date range
   Future<List<TaskSession>> getSessionsForDateRange(DateTime start, DateTime end) async {
     final allSessions = await _storageService.loadSessions();

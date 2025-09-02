@@ -520,13 +520,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final timerProvider = Provider.of<TimerProvider>(context, listen: false);
       
-      // Stop current session if running
-      if (timerProvider.isRunning) {
-        await timerProvider.stopSession();
-      }
-      
-      // Clear all data
-      await timerProvider.updateSettings(AppSettings());
+      // Clear all data using the new method
+      await timerProvider.clearAllData();
       
       // Reset form
       _loadSettings();

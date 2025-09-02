@@ -16,10 +16,10 @@ class SessionHistoryList extends StatefulWidget {
   });
 
   @override
-  State<SessionHistoryList> createState() => _SessionHistoryListState();
+  State<SessionHistoryList> createState() => SessionHistoryListState();
 }
 
-class _SessionHistoryListState extends State<SessionHistoryList> {
+class SessionHistoryListState extends State<SessionHistoryList> {
   List<TaskSession> _sessions = [];
   bool _isLoading = true;
 

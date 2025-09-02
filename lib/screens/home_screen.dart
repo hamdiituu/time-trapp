@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/timer_provider.dart';
-import '../widgets/start_session_modal.dart';
 import '../widgets/session_history_list.dart';
 import 'reports_screen.dart';
 import 'session_start_screen.dart';
@@ -17,6 +16,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<SessionHistoryListState> _sessionHistoryKey = GlobalKey<SessionHistoryListState>();
+
   @override
   void initState() {
     super.initState();
@@ -363,18 +364,45 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 16),
-          child: Text(
-            'Son Seanslar',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Son Seanslar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  _sessionHistoryKey.currentState?.refreshSessions();
+                },
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.grey[600],
+                ),
+                tooltip: 'Yenile',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        SessionHistoryList(
-          onSessionTap: (session) {
-            // Handle session tap if needed
+        Consumer<TimerProvider>(
+          builder: (context, provider, child) {
+            // This will rebuild when timer provider notifies listeners
+            return SessionHistoryList(
+              key: _sessionHistoryKey,
+              onSessionTap: (session) {
+                // Handle session tap if needed
+              },
+            );
           },
         ),
       ],
