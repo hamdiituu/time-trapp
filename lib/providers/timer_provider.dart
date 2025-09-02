@@ -87,6 +87,8 @@ class TimerProvider with ChangeNotifier {
     _currentSession = await _storageService.loadCurrentSession();
     
     if (_currentSession != null && _currentSession!.isActive) {
+      _isRunning = true;
+      _elapsedTime = DateTime.now().difference(_currentSession!.startTime);
       _startTimer();
     }
     
@@ -168,8 +170,12 @@ class TimerProvider with ChangeNotifier {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_currentSession != null) {
-        _elapsedTime = DateTime.now().difference(_currentSession!.startTime);
-        notifyListeners();
+        final newElapsedTime = DateTime.now().difference(_currentSession!.startTime);
+        // Only notify listeners if elapsed time has actually changed
+        if (newElapsedTime != _elapsedTime) {
+          _elapsedTime = newElapsedTime;
+          notifyListeners();
+        }
       }
     });
   }

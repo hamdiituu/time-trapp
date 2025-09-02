@@ -5,7 +5,7 @@ import '../providers/timer_provider.dart';
 import '../models/task_session.dart';
 
 // Widget for displaying session history
-class SessionHistoryList extends StatelessWidget {
+class SessionHistoryList extends StatefulWidget {
   final Function(TaskSession)? onSessionTap;
   final int maxItems;
 
@@ -16,29 +16,43 @@ class SessionHistoryList extends StatelessWidget {
   });
 
   @override
+  State<SessionHistoryList> createState() => _SessionHistoryListState();
+}
+
+class _SessionHistoryListState extends State<SessionHistoryList> {
+  List<TaskSession> _sessions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  // Method to refresh sessions (can be called externally)
+  void refreshSessions() {
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    final timerProvider = Provider.of<TimerProvider>(context, listen: false);
+    final sessions = await timerProvider.getTodaysSessions();
+    
+    if (mounted) {
+      setState(() {
+        _sessions = sessions;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<TaskSession>>(
-      future: Provider.of<TimerProvider>(context, listen: false).getTodaysSessions(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (snapshot.hasError) {
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Hata: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
-          );
-        }
-
-        final sessions = snapshot.data ?? [];
-        
-        if (sessions.isEmpty) {
+    if (_sessions.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(32.0),
             decoration: BoxDecoration(
@@ -89,10 +103,10 @@ class SessionHistoryList extends StatelessWidget {
         }
 
         // Sort sessions by start time (newest first)
-        sessions.sort((a, b) => b.startTime.compareTo(a.startTime));
+        _sessions.sort((a, b) => b.startTime.compareTo(a.startTime));
         
         // Limit to maxItems
-        final displaySessions = sessions.take(maxItems).toList();
+        final displaySessions = _sessions.take(widget.maxItems).toList();
 
         return Column(
           children: displaySessions.map((session) {
@@ -113,7 +127,7 @@ class SessionHistoryList extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () => onSessionTap?.call(session),
+                  onTap: () => widget.onSessionTap?.call(session),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -217,8 +231,6 @@ class SessionHistoryList extends StatelessWidget {
             );
           }).toList(),
         );
-      },
-    );
   }
 
   String _formatSessionTime(TaskSession session) {
