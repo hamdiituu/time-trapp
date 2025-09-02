@@ -18,7 +18,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60  # ⏰ 60 dakika timeout
+    timeout-minutes: 60
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -70,15 +70,17 @@ jobs:
     - name: Clean build
       run: flutter clean
 
-    - name: Build for ${{ matrix.platform }}
-      run: |
-        if [ "${{ matrix.platform }}" = "linux" ]; then
-          flutter build linux --release
-        elif [ "${{ matrix.platform }}" = "windows" ]; then
-          flutter build windows --release
-        elif [ "${{ matrix.platform }}" = "macos" ]; then
-          flutter build macos --release
-        fi
+    - name: Build Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: flutter build linux --release
+
+    - name: Build Windows
+      if: matrix.os == 'windows-latest'
+      run: flutter build windows --release
+
+    - name: Build macOS
+      if: matrix.os == 'macos-latest'
+      run: flutter build macos --release
 
     - name: Create release archive (Linux)
       if: matrix.platform == 'linux'
@@ -113,7 +115,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # ⏰ 30 dakika timeout
+    timeout-minutes: 30
     if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     
     steps:
