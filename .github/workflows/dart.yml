@@ -18,6 +18,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60  # ⏰ 60 dakika timeout
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -66,12 +67,6 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
-#    - name: Run tests
-#      run: flutter test
-
-    - name: Flutter doctor
-      run: flutter doctor -v
-
     - name: Clean build
       run: flutter clean
 
@@ -118,6 +113,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # ⏰ 30 dakika timeout
     if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     
     steps:
