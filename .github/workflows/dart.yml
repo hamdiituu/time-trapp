@@ -67,6 +67,9 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
+#    - name: Run tests
+#      run: flutter test
+
     - name: Clean build
       run: flutter clean
 
@@ -87,8 +90,9 @@ jobs:
       run: |
         cd build/linux/x64/release/bundle
         tar -czf ../../../../${{ matrix.artifact_name }}.tar.gz .
-        cd ../../../../
-        mv build/linux/x64/release/bundle/${{ matrix.artifact_name }}.tar.gz .
+        cd ../../../../../
+        echo "Created ${{ matrix.artifact_name }}.tar.gz"
+        ls -la ${{ matrix.artifact_name }}.tar.gz
 
     - name: Create release archive (Windows)
       if: matrix.platform == 'windows'
@@ -98,6 +102,7 @@ jobs:
         $zipPath = "${{ matrix.artifact_name }}.zip"
         Compress-Archive -Path "$sourcePath/*" -DestinationPath $zipPath -Force
         Write-Host "Created $zipPath"
+        Get-ChildItem $zipPath
 
     - name: Create release archive (macOS)
       if: matrix.platform == 'macos'
@@ -105,7 +110,8 @@ jobs:
         cd build/macos/Build/Products/Release
         zip -r ../../../../../${{ matrix.artifact_name }}.zip Time\ Trapp.app
         cd ../../../../../
-        mv build/macos/Build/Products/Release/${{ matrix.artifact_name }}.zip .
+        echo "Created ${{ matrix.artifact_name }}.zip"
+        ls -la ${{ matrix.artifact_name }}.zip
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
