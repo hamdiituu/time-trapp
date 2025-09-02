@@ -8,6 +8,7 @@ import 'dart:async' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:time_trapp/models/app_settings.dart' as _i2;
 import 'package:time_trapp/models/task_session.dart' as _i5;
+import 'package:time_trapp/models/webhook_config.dart' as _i6;
 import 'package:time_trapp/providers/timer_provider.dart' as _i3;
 
 // ignore_for_file: type=lint
@@ -130,7 +131,7 @@ class MockIWebhookService extends _i1.Mock implements _i3.IWebhookService {
   @override
   _i4.Future<void> sendSessionStartWebhook(
     _i5.TaskSession? session,
-    dynamic config, {
+    _i6.WebhookConfig? config, {
     String? userName,
   }) =>
       (super.noSuchMethod(
@@ -149,7 +150,7 @@ class MockIWebhookService extends _i1.Mock implements _i3.IWebhookService {
   @override
   _i4.Future<void> sendSessionStopWebhook(
     _i5.TaskSession? session,
-    dynamic config, {
+    _i6.WebhookConfig? config, {
     String? userName,
   }) =>
       (super.noSuchMethod(
