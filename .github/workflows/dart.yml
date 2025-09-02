@@ -67,7 +67,6 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
-
     - name: Clean build
       run: flutter clean
 
@@ -90,6 +89,8 @@ jobs:
         tar -czf ../../../../${{ matrix.artifact_name }}.tar.gz .
         cd ../../../../../
         echo "Archive created successfully"
+        pwd
+        ls -la
         ls -la ${{ matrix.artifact_name }}.tar.gz
 
     - name: Create release archive (Windows)
