@@ -42,6 +42,7 @@ jobs:
       with:
         flutter-version: '3.24.0'
         channel: 'stable'
+        cache: true
 
     - name: Install Linux dependencies
       if: matrix.os == 'ubuntu-latest'
@@ -53,8 +54,6 @@ jobs:
           ninja-build \
           pkg-config \
           libgtk-3-dev \
-          liblzma-dev \
-          libstdc++-12-dev \
           libayatana-appindicator3-dev \
           libx11-dev \
           libxrandr-dev \
@@ -62,10 +61,15 @@ jobs:
           libxcursor-dev \
           libxinerama-dev \
           libgl1-mesa-dev \
-          libasound2-dev
+          libasound2-dev \
+          liblzma-dev \
+          libstdc++6
 
-    - name: Install dependencies
+    - name: Flutter pub get
       run: flutter pub get
+
+#    - name: Run tests
+#      run: flutter test
 
     - name: Clean build
       run: flutter clean
@@ -86,31 +90,28 @@ jobs:
       if: matrix.platform == 'linux'
       run: |
         cd build/linux/x64/release/bundle
-        tar -czf ../../../../${{ matrix.artifact_name }}.tar.gz .
-        cd ../../../../../
-        echo "Archive created successfully"
-        pwd
-        ls -la
-        ls -la ${{ matrix.artifact_name }}.tar.gz
+        tar -czf "$GITHUB_WORKSPACE/${{ matrix.artifact_name }}.tar.gz" .
+        echo "Archive created: $GITHUB_WORKSPACE/${{ matrix.artifact_name }}.tar.gz"
+        ls -la "$GITHUB_WORKSPACE/${{ matrix.artifact_name }}.tar.gz"
 
     - name: Create release archive (Windows)
       if: matrix.platform == 'windows'
       shell: powershell
       run: |
         $sourcePath = "build/windows/x64/runner/Release"
-        $zipPath = "${{ matrix.artifact_name }}.zip"
-        Compress-Archive -Path "$sourcePath/*" -DestinationPath $zipPath -Force
+        $zipPath = "$env:GITHUB_WORKSPACE\${{ matrix.artifact_name }}.zip"
+        Compress-Archive -Path "$sourcePath\*" -DestinationPath $zipPath -Force
         Write-Host "Created $zipPath"
         Get-ChildItem $zipPath
 
     - name: Create release archive (macOS)
       if: matrix.platform == 'macos'
       run: |
-        cd build/macos/Build/Products/Release
-        zip -r ../../../../../${{ matrix.artifact_name }}.zip Time\ Trapp.app
-        cd ../../../../../
-        echo "Created ${{ matrix.artifact_name }}.zip"
-        ls -la ${{ matrix.artifact_name }}.zip
+        APP_NAME="Time Trapp.app"
+        APP_DIR="build/macos/Build/Products/Release"
+        ditto -c -k --sequesterRsrc --keepParent "$APP_DIR/$APP_NAME" "$GITHUB_WORKSPACE/${{ matrix.artifact_name }}.zip"
+        echo "Created $GITHUB_WORKSPACE/${{ matrix.artifact_name }}.zip"
+        ls -la "$GITHUB_WORKSPACE/${{ matrix.artifact_name }}.zip"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -122,22 +123,25 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
-    
+    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
+      with:
+        pattern: time_trapp_*
+        merge-multiple: true  # indirilen tüm artifact'ları çalışma dizinine birleştirir
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.event.inputs.release_version || github.ref_name }}
-        name: Time Trapp ${{ github.event.inputs.release_version || github.ref_name }}
+        tag_name: ${{ inputs.release_version || github.ref_name }}
+        name: Time Trapp ${{ inputs.release_version || github.ref_name }}
         body: |
-          # Time Trapp ${{ github.event.inputs.release_version || github.ref_name }}
+          # Time Trapp ${{ inputs.release_version || github.ref_name }}
           
           ## 🎉 Release Notes
           
