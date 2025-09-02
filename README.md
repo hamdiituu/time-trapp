@@ -29,6 +29,12 @@
 - **Customizable Webhooks**: Send work data to external systems
 - **Multiple HTTP Methods**: Support for GET, POST, PUT, PATCH
 - **Flexible Data Sending**: Send data as body or query parameters
+- **Automatic Username Detection**: Automatically uses system username for webhooks
+- **Cross-Platform Username Support**: Works on Windows, macOS, and Linux
+- **Smart Username Management**: 
+  - Automatically detects system username changes
+  - Falls back to manual username if needed
+  - Updates username on app open/close
 - **Event-Based Triggers**:
   - When session starts
   - When session stops
@@ -98,7 +104,10 @@
 3. Select HTTP method (GET, POST, PUT, PATCH)
 4. Determine data sending method (Body or Query)
 5. Select which events should trigger webhooks
-6. Test your configuration with "Test Webhook"
+6. Configure username settings:
+   - **Automatic System Username**: Uses system username automatically (default)
+   - **Manual Username**: Use custom username for webhooks
+7. Test your configuration with "Test Webhook"
 
 #### Testing Webhooks Locally
 To test webhooks locally, you can use a simple HTTP server:
@@ -164,6 +173,8 @@ If you can access `http://localhost:3000` in your browser but not from the app, 
 #### Services
 - `StorageService`: Local data management
 - `WebhookService`: Webhook operations
+- `WebhookUsernameService`: Automatic system username detection for webhooks
+- `UsernameService`: Cross-platform system username detection
 - `TimerProvider`: Time tracking and state management
 - `AppLifecycleService`: Application lifecycle management
 
@@ -178,7 +189,8 @@ If you can access `http://localhost:3000` in your browser but not from the app, 
   "goal": "Complete main page design",
   "link": "https://github.com/user/repo",
   "startTime": "2024-01-15T10:30:00.000Z",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "userName": "john_doe"
 }
 ```
 
@@ -194,7 +206,8 @@ If you can access `http://localhost:3000` in your browser but not from the app, 
   "endTime": "2024-01-15T12:15:00.000Z",
   "duration": 6300000,
   "formattedDuration": "01:45:00",
-  "timestamp": "2024-01-15T12:15:00.000Z"
+  "timestamp": "2024-01-15T12:15:00.000Z",
+  "userName": "john_doe"
 }
 ```
 
@@ -202,7 +215,8 @@ If you can access `http://localhost:3000` in your browser but not from the app, 
 ```json
 {
   "event": "app_open",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "userName": "john_doe"
 }
 ```
 
@@ -249,7 +263,13 @@ lib/
 - **Özelleştirilebilir Webhooklar**: Çalışma verilerinizi dış sistemlere gönderin
 - **Çoklu HTTP Metodları**: GET, POST, PUT, PATCH desteği
 - **Esnek Veri Gönderimi**: Body veya query parametreleri olarak veri gönderimi
-- **Olay Bazlı Tetikleme**:
+- **Otomatik Kullanıcı Adı Algılama**: Webhook'larda sistem kullanıcı adını otomatik kullanır
+- **Çapraz Platform Kullanıcı Adı Desteği**: Windows, macOS ve Linux'ta çalışır
+- **Akıllı Kullanıcı Adı Yönetimi**: 
+  - Sistem kullanıcı adı değişikliklerini otomatik algılar
+  - Gerekirse manuel kullanıcı adına geri döner
+  - Uygulama açılış/kapanışında kullanıcı adını günceller
+- **Olay Bazlı Tetikleme**: 
   - Seans başlatıldığında
   - Seans durdurulduğunda
   - Uygulama açıldığında
@@ -318,7 +338,10 @@ lib/
 3. HTTP metodunu seçin (GET, POST, PUT, PATCH)
 4. Veri gönderme yöntemini belirleyin (Body veya Query)
 5. Hangi olaylarda webhook gönderileceğini seçin
-6. "Webhook Test Et" ile yapılandırmanızı test edin
+6. Kullanıcı adı ayarlarını yapılandırın:
+   - **Otomatik Sistem Kullanıcı Adı**: Sistem kullanıcı adını otomatik kullanır (varsayılan)
+   - **Manuel Kullanıcı Adı**: Webhook'lar için özel kullanıcı adı kullanın
+7. "Webhook Test Et" ile yapılandırmanızı test edin
 
 #### Webhook'ları Yerel Olarak Test Etme
 Webhook'ları yerel olarak test etmek için basit bir HTTP sunucusu kullanabilirsiniz:
@@ -384,6 +407,8 @@ Tarayıcıdan `http://localhost:3000` adresine erişebiliyorsanız ama uygulamad
 #### Servisler
 - `StorageService`: Yerel veri yönetimi
 - `WebhookService`: Webhook işlemleri
+- `WebhookUsernameService`: Webhook'lar için otomatik sistem kullanıcı adı algılama
+- `UsernameService`: Çapraz platform sistem kullanıcı adı algılama
 - `TimerProvider`: Zaman takibi ve state yönetimi
 - `AppLifecycleService`: Uygulama yaşam döngüsü yönetimi
 
@@ -398,7 +423,8 @@ Tarayıcıdan `http://localhost:3000` adresine erişebiliyorsanız ama uygulamad
   "goal": "Ana sayfa tasarımını tamamla",
   "link": "https://github.com/user/repo",
   "startTime": "2024-01-15T10:30:00.000Z",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "userName": "ahmet_yilmaz"
 }
 ```
 
@@ -414,7 +440,8 @@ Tarayıcıdan `http://localhost:3000` adresine erişebiliyorsanız ama uygulamad
   "endTime": "2024-01-15T12:15:00.000Z",
   "duration": 6300000,
   "formattedDuration": "01:45:00",
-  "timestamp": "2024-01-15T12:15:00.000Z"
+  "timestamp": "2024-01-15T12:15:00.000Z",
+  "userName": "ahmet_yilmaz"
 }
 ```
 
@@ -422,7 +449,8 @@ Tarayıcıdan `http://localhost:3000` adresine erişebiliyorsanız ama uygulamad
 ```json
 {
   "event": "app_open",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "userName": "ahmet_yilmaz"
 }
 ```
 

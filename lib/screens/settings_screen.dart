@@ -5,6 +5,7 @@ import '../models/app_settings.dart';
 import '../models/webhook_config.dart';
 import '../services/webhook_service.dart';
 import '../services/username_service.dart';
+import '../services/webhook_username_service.dart';
 
 // Settings screen for user preferences and webhook configuration
 class SettingsScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   bool _isLoading = false;
   bool _isTestingWebhook = false;
+  bool _useSystemUsernameForWebhook = true;
 
   @override
   void initState() {
@@ -69,6 +71,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _webhookUrlController.text = settings.webhookConfig.url;
     _webhookMethodController.text = settings.webhookConfig.method;
     
+    // Load webhook username setting
+    final useSystemUsername = await WebhookUsernameService.isUsingSystemUsername();
+    
     setState(() {
       _selectedMethod = settings.webhookConfig.method;
       _sendDataInBody = settings.webhookConfig.sendDataInBody;
@@ -76,6 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _onStop = settings.webhookConfig.onStop;
       _onAppOpen = settings.webhookConfig.onAppOpen;
       _onAppClose = settings.webhookConfig.onAppClose;
+      _useSystemUsernameForWebhook = useSystemUsername;
     });
   }
 
@@ -99,6 +105,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sistem kullanıcı adı alınamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleWebhookSystemUsername(bool useSystem) async {
+    try {
+      if (useSystem) {
+        await WebhookUsernameService.enableSystemUsername();
+        setState(() {
+          _useSystemUsernameForWebhook = true;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Webhook için sistem kullanıcı adı etkinleştirildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Use current userName for webhook
+        await WebhookUsernameService.setManualUsername(_userNameController.text.trim());
+        setState(() {
+          _useSystemUsernameForWebhook = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Webhook için manuel kullanıcı adı kullanılıyor'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -369,6 +419,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   side: BorderSide(color: Colors.blue),
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.webhook,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Webhook Kullanıcı Adı',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Sistem kullanıcı adını otomatik kullan'),
+              subtitle: const Text('Webhook\'larda sistem kullanıcı adı otomatik olarak kullanılır'),
+              value: _useSystemUsernameForWebhook,
+              onChanged: _toggleWebhookSystemUsername,
+              contentPadding: EdgeInsets.zero,
             ),
           ],
         ),

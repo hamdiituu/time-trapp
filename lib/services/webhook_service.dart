@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/task_session.dart';
 import '../models/webhook_config.dart';
+import 'webhook_username_service.dart';
 
 // Service for handling webhook requests
 class WebhookService {
@@ -23,6 +24,9 @@ class WebhookService {
   }) async {
     if (!config.onStart || !config.isConfigured) return;
 
+    // Get username (use provided userName or auto-detect)
+    final webhookUserName = userName ?? await WebhookUsernameService.getWebhookUsername();
+
     await _sendWebhook(
       config,
       'session_start',
@@ -34,7 +38,7 @@ class WebhookService {
         'link': session.link,
         'startTime': session.startTime.toIso8601String(),
         'timestamp': DateTime.now().toIso8601String(),
-        if (userName != null) 'userName': userName,
+        'userName': webhookUserName,
       },
     );
   }
@@ -46,6 +50,9 @@ class WebhookService {
     String? userName,
   }) async {
     if (!config.onStop || !config.isConfigured) return;
+
+    // Get username (use provided userName or auto-detect)
+    final webhookUserName = userName ?? await WebhookUsernameService.getWebhookUsername();
 
     await _sendWebhook(
       config,
@@ -61,7 +68,7 @@ class WebhookService {
         'duration': session.duration?.inMilliseconds,
         'formattedDuration': session.formattedDuration,
         'timestamp': DateTime.now().toIso8601String(),
-        if (userName != null) 'userName': userName,
+        'userName': webhookUserName,
       },
     );
   }
@@ -70,13 +77,16 @@ class WebhookService {
   static Future<void> sendAppOpenWebhook(WebhookConfig config, {String? userName}) async {
     if (!config.onAppOpen || !config.isConfigured) return;
 
+    // Get username (use provided userName or auto-detect)
+    final webhookUserName = userName ?? await WebhookUsernameService.getWebhookUsername();
+
     await _sendWebhook(
       config,
       'app_open',
       {
         'event': 'app_open',
         'timestamp': DateTime.now().toIso8601String(),
-        if (userName != null) 'userName': userName,
+        'userName': webhookUserName,
       },
     );
   }
@@ -85,13 +95,16 @@ class WebhookService {
   static Future<void> sendAppCloseWebhook(WebhookConfig config, {String? userName}) async {
     if (!config.onAppClose || !config.isConfigured) return;
 
+    // Get username (use provided userName or auto-detect)
+    final webhookUserName = userName ?? await WebhookUsernameService.getWebhookUsername();
+
     await _sendWebhook(
       config,
       'app_close',
       {
         'event': 'app_close',
         'timestamp': DateTime.now().toIso8601String(),
-        if (userName != null) 'userName': userName,
+        'userName': webhookUserName,
       },
     );
   }
@@ -201,12 +214,16 @@ class WebhookService {
     }
     
     try {
+      // Get username for test webhook
+      final webhookUserName = await WebhookUsernameService.getWebhookUsername();
+      
       final testData = {
         'event': 'test',
         'timestamp': DateTime.now().toIso8601String(),
         'message': 'This is a test webhook from Time Trapp',
         'app': 'Time Trapp',
         'version': '1.0.0',
+        'userName': webhookUserName,
       };
 
       final uri = Uri.parse(config.url);

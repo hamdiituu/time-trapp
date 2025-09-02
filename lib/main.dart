@@ -5,6 +5,7 @@ import 'providers/timer_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/webhook_service.dart';
+import 'services/webhook_username_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/tray_service.dart';
 
@@ -62,6 +63,9 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _initializeApp() async {
     // Initialize locale data for intl package
     await initializeDateFormatting('tr_TR', null);
+    
+    // Initialize webhook username service
+    await WebhookUsernameService.initialize();
     
     final timerProvider = Provider.of<TimerProvider>(context, listen: false);
     await timerProvider.initialize();
